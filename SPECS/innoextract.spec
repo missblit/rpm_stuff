@@ -6,7 +6,7 @@ License:        zlib
 URL:            http://constexpr.org/innoextract/
 Source0:        http://constexpr.org/innoextract/files/innoextract-1.4.tar.gz
 BuildRequires:  boost-devel, xz-devel, glibc-devel
-#Requires:       boost, lzma-libs, glibc
+#Requires:       boost, xz-libs, glibc
 
 %description
 Inno Setup is a tool to create installers for Microsoft Windows applications.
