@@ -1,0 +1,11 @@
+--- rman.c	2003-07-26 12:15:00.000000000 -0700
++++ rman.c	2014-12-28 14:10:42.389345471 -0800
+@@ -1372,7 +1372,7 @@
+ 		break;
+ 	   case BEGINSECTION:	break;
+ 	   case ENDSECTION:
+-		if (sectheadid==NAME && message!=NULL) printf(message);
++		if (sectheadid==NAME && message!=NULL) printf("%s",message);
+ 		break;
+ 	   case BEGINSUBSECTION:	break;
+ 	   case ENDSUBSECTION:	break;

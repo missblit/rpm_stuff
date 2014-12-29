@@ -1,0 +1,10 @@
+--- html/tree.h	2005-02-21 20:47:04.000000000 -0800
++++ html/tree.h	2014-12-28 16:10:27.765382401 -0800
+@@ -46,6 +46,7 @@
+ #define tree_hh_
+ 
+ #include <cassert>
++#include <cstddef>
+ #include <memory>
+ #include <stdexcept>
+ #include <iterator>
