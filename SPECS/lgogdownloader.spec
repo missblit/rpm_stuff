@@ -5,7 +5,8 @@ Summary:        LGOGDownloader is open source downloader to GOG.com for Linux us
 License:        WTFPL
 URL:            https://sites.google.com/site/gogdownloader/home
 Source0:        https://sites.google.com/site/gogdownloader/lgogdownloader-2.20.tar.gz
-BuildRequires:  curl-devel, jsoncpp-devel, liboauth-devel, tinyxml-devel, htmlcxx, help2man
+BuildRequires:  curl-devel, jsoncpp-devel, liboauth-devel, tinyxml-devel
+BuildRequires:  htmlcxx-devel, help2man
 #Requires:       boost-filesystem, boost-iostreams, boost-program-options, boost-system, xz-libs, glibc
 
 %description
