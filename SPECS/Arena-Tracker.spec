@@ -8,6 +8,7 @@ License:        GPLv2
 URL:            https://github.com/supertriodo/Arena-Tracker
 Source0:        https://github.com/supertriodo/Arena-Tracker/archive/%{commit}/Arena-Tracker-%{commit}.tar.gz
 BuildRequires:  qt5-qtbase-devel qt5-qtbase-gui
+Requires: qt5-qtbase qt5-qtbase-gui
 
 %description
 Arena Tracker reads the Hearthstone log to keep track of your arena games and
