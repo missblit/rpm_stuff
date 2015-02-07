@@ -1,0 +1,175 @@
+diff -ru unpatched/arenatracker.qrc patched/arenatracker.qrc
+--- unpatched/arenatracker.qrc	2015-02-05 05:22:07.000000000 -0800
++++ patched/arenatracker.qrc	2015-02-06 17:26:24.229328655 -0800
+@@ -24,6 +24,7 @@
+         <file>Images/donate.gif</file>
+         <file>Images/bgCard1.png</file>
+         <file>Images/bgCard2.png</file>
++        <file>Images/unknown.png</file>
+         <file>Fonts/hsFont.ttf</file>
+         <file>Json/AllSets.json</file>
+     </qresource>
+diff -ru unpatched/hscarddownloader.cpp patched/hscarddownloader.cpp
+--- unpatched/hscarddownloader.cpp	2015-02-05 05:22:07.000000000 -0800
++++ patched/hscarddownloader.cpp	2015-02-06 17:22:15.689165525 -0800
+@@ -1,8 +1,11 @@
+ #include "hscarddownloader.h"
+ #include <QUrl>
+ #include <QNetworkRequest>
++#include <QFileInfo>
++#include <QString>
+ 
+-HSCardDownloader::HSCardDownloader(QObject *parent) : QObject(parent)
++HSCardDownloader::HSCardDownloader(QDir cardDir, QObject *parent)
++: QObject(parent), cardDir(cardDir)
+ {
+     networkManager = new QNetworkAccessManager(this);
+     connect(networkManager, SIGNAL(finished(QNetworkReply*)),
+@@ -22,7 +25,6 @@
+     qDebug() << "1 mas. Web Cards pendientes: " << gettingWebCards.count();
+ }
+ 
+-
+ void HSCardDownloader::saveWebImage(QNetworkReply * reply)
+ {
+     reply->deleteLater();
+@@ -38,7 +40,10 @@
+     QImage webImage;
+     webImage.loadFromData(reply->readAll());
+ 
+-    if(!webImage.save("./HSCards/" + deckCard.code + ".png", "png"))
++    QFileInfo info(cardDir, deckCard.code + ".png");
++    QString cardPath = info.absoluteFilePath();
++    
++    if(!webImage.save(cardPath, "png"))
+     {
+         qDebug() << "MainWindow: " << "ERROR: Fallo al guardar en disco: " << deckCard.code;
+         emit sendLog(tr("File: ERROR saving image card to disk. Did you remove HSCards dir?"));
+diff -ru unpatched/hscarddownloader.h patched/hscarddownloader.h
+--- unpatched/hscarddownloader.h	2015-02-05 05:22:07.000000000 -0800
++++ patched/hscarddownloader.h	2015-02-06 17:21:48.645147774 -0800
+@@ -6,6 +6,7 @@
+ #include <QNetworkAccessManager>
+ #include <QNetworkReply>
+ #include <QMap>
++#include <QDir>
+ 
+ #define CARDS_URL "http://wow.zamimg.com/images/hearthstone/cards/enus/medium/"
+ 
+@@ -14,13 +15,14 @@
+ {
+     Q_OBJECT
+ public:
+-    explicit HSCardDownloader(QObject *parent = 0);
++    explicit HSCardDownloader(QDir cardDir, QObject *parent = 0);
+     ~HSCardDownloader();
+ 
+ //Variables
+ private:
+     QNetworkAccessManager *networkManager;
+     QMap<QNetworkReply *, DeckCard> gettingWebCards;
++    QDir cardDir;
+ 
+ 
+ //Metodos
+diff -ru unpatched/mainwindow.cpp patched/mainwindow.cpp
+--- unpatched/mainwindow.cpp	2015-02-05 05:22:07.000000000 -0800
++++ patched/mainwindow.cpp	2015-02-06 17:34:52.732662412 -0800
+@@ -11,12 +11,18 @@
+ #include <QJsonDocument>
+ #include <QJsonArray>
+ #include <QFileInfo>
+-
++#include <QStandardPaths>
++#include <QDir>
++#include <QString>
+ 
+ MainWindow::MainWindow(QWidget *parent) :
+     QMainWindow(parent),
+-    ui(new Ui::MainWindow)
++    ui(new Ui::MainWindow),
++    cardDir(  QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
++            + "/Arena-Tracker/HSCards")
+ {
++    if(!cardDir.exists())
++        cardDir.mkdir(".");
+     ui->setupUi(this);
+     completeUI();
+ 
+@@ -88,7 +94,7 @@
+ 
+ void MainWindow::createCardDownloader()
+ {
+-    cardDownloader = new HSCardDownloader();
++    cardDownloader = new HSCardDownloader(cardDir);
+     connect(cardDownloader, SIGNAL(downloaded(DeckCard)),
+             this, SLOT(drawListWidgetItem(DeckCard)));
+     connect(cardDownloader, SIGNAL(sendLog(QString)),
+@@ -777,7 +783,7 @@
+ 
+ void MainWindow::checkCardImage(DeckCard &deckCard)
+ {
+-    QFileInfo *cardFile = new QFileInfo("./HSCards/" + deckCard.code + ".png");
++    QFileInfo *cardFile = new QFileInfo(cardFilePath(deckCard));
+ 
+     if(!cardFile->exists())
+     {
+@@ -786,7 +792,12 @@
+     }
+ }
+ 
+-
++QString MainWindow::cardFilePath(DeckCard &deckCard) {
++    if(deckCard.code == "")
++        return ":Images/unknown.png";
++    QFileInfo info(cardDir, deckCard.code + ".png");
++    return info.absoluteFilePath();
++}
+ 
+ void MainWindow::drawListWidgetItem(DeckCard deckCard, bool drawTotal)
+ {
+@@ -811,7 +822,7 @@
+         else                                source = QRectF(48,98,100,25);
+         if(total > 1)                       target = QRectF(100,6,100,25);
+         else                                target = QRectF(113,6,100,25);
+-        painter.drawPixmap(target, QPixmap("./HSCards/" + code + ".png"), source);
++        painter.drawPixmap(target, QPixmap(cardFilePath(deckCard)), source);
+ 
+         //Background and #cards
+         if(total == 1)  painter.drawPixmap(0,0,QPixmap(":Images/bgCard1.png"));
+@@ -854,7 +865,7 @@
+     painter.end();
+ 
+     item->setIcon(QIcon(canvas));
+-    item->setToolTip("<html><img src=./HSCards/" + code + ".png/></html>");
++    item->setToolTip("<html><img src=\"" + cardFilePath(deckCard) + "\"></html>");
+ }
+ 
+ 
+diff -ru unpatched/mainwindow.h patched/mainwindow.h
+--- unpatched/mainwindow.h	2015-02-05 05:22:07.000000000 -0800
++++ patched/mainwindow.h	2015-02-06 17:03:00.864343368 -0800
+@@ -9,6 +9,7 @@
+ #include <QTreeWidgetItem>
+ #include <QListWidgetItem>
+ #include <QJsonObject>
++#include <QDir>
+ 
+ #define GREEN QColor(200,250,200)
+ #define RED QColor(Qt::red)
+@@ -43,6 +44,7 @@
+     QList<DeckCard> deckCardList;
+     QMap<QString, QJsonObject> cardsJson;
+     int remainingCards;
++    QDir cardDir;
+ 
+ 
+ //Metodos
+@@ -62,6 +64,7 @@
+     void initCardsJson();
+     void insertDeckCard(DeckCard &deckCard);
+     void checkCardImage(DeckCard &deckCard);
++    QString cardFilePath(DeckCard &deckCard);
+ 
+ //Override events
+ protected:
